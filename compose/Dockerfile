@@ -36,6 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     supervisor \
     postgresql-17 \
     postgresql-client-17 \
+    default-mysql-client \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем clickhouse-backup
@@ -68,7 +69,9 @@ COPY ./apps .
 RUN mkdir -p /backup_manager/logs && touch /var/log/cron.log
 
 # Nginx и Supervisor
-COPY compose/nginx.conf /etc/nginx/conf.d/default.conf
+RUN rm /etc/nginx/nginx.conf
+COPY compose/nginx.conf /etc/nginx/nginx.conf
+COPY compose/default.conf /etc/nginx/conf.d/default.conf
 COPY compose/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Порты
