@@ -333,3 +333,4 @@ media/*
 .bash_history
 .envs
 *.sqlite3
+.env

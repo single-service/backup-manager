@@ -110,6 +110,11 @@ class BackupService:
         db_interface = DB_INTERFACE[db.db_type]()
         is_connected = db_interface.check_connection(db.connection_string)
         if not is_connected:
+            # Для восстановления допускаем отсутствие самой БД: важно, чтобы сервер/учётка были доступны
+            if hasattr(db_interface, "server_alive") and db_interface.server_alive(db.connection_string):
+                is_connected = True
+
+        if not is_connected:
             error = "Database connection failed"
             self._set_error4operation(operation, error)
             return False, error

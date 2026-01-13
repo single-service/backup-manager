@@ -5,6 +5,7 @@ from django.utils.translation import gettext as _
 class DBType(IntegerChoices):
     POSTGRESQL = 1, 'Postgres'
     CLICKHOUSE = 2, 'ClickHouse'
+    MYSQL = 3, 'Mysql'
 
 
 class DumpTaskPeriodsChoices(IntegerChoices):

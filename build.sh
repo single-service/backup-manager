@@ -2,7 +2,6 @@
 set -e
 
 . ./.env
-
 # Проверка на наличие всех необходимых переменных
 if [ -z "$DOCKER_USERNAME" ] || [ -z "$DOCKER_PASSWORD" ] || [ -z "$IMAGE_NAME" ]; then
   echo "ERROR: Missing environment variables."

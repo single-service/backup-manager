@@ -33,7 +33,7 @@ class FileStorage(models.Model):
         max_length=10, choices=TYPE_CHOICES, default=TYPE_S3)
 
     # Поля «как раньше»
-    host = models.URLField(blank=True, null=True, help_text=_(
+    host = models.CharField(max_length=255, blank=True, null=True, help_text=_(
         "S3 endpoint (для S3). Для Yandex Disk можно оставить пустым"))
     bucket_name = models.CharField(max_length=255, blank=True, null=True, help_text=_(
         "S3 bucket (для S3). Для Yandex Disk не используется"))
