@@ -23,23 +23,28 @@ class AbstractBaseModel(models.Model):
 class FileStorage(models.Model):
     TYPE_S3 = "s3"
     TYPE_YADISK = "yadisk"
+    TYPE_FTP = "ftp"
+    TYPE_SFTP = "sftp"
     TYPE_CHOICES = (
         (TYPE_S3, "S3"),
         (TYPE_YADISK, "Yandex Disk"),
+        (TYPE_FTP, "FTP"),
+        (TYPE_SFTP, "SFTP"),
     )
 
     name = models.CharField(max_length=255, unique=True)
     type = models.CharField(
         max_length=10, choices=TYPE_CHOICES, default=TYPE_S3)
 
-    # Поля «как раньше»
+    # Поля для различных типов хранилищ
     host = models.CharField(max_length=255, blank=True, null=True, help_text=_(
-        "S3 endpoint (для S3). Для Yandex Disk можно оставить пустым"))
+        "S3 endpoint / FTP/SFTP host. Для Yandex Disk можно оставить пустым"))
     bucket_name = models.CharField(max_length=255, blank=True, null=True, help_text=_(
-        "S3 bucket (для S3). Для Yandex Disk не используется"))
-    access_key = models.CharField(max_length=255, blank=True, null=True, help_text=_("S3 Access Key (для S3)"))
+        "S3 bucket (для S3). FTP/SFTP базовый путь"))
+    access_key = models.CharField(max_length=255, blank=True, null=True, help_text=_(
+        "S3 Access Key / FTP/SFTP username"))
     secret_key = models.CharField(max_length=255, blank=True, null=True,
-                                  help_text=_("S3 Secret Key ИЛИ OAuth-токен (для Yandex Disk)"))
+                                  help_text=_("S3 Secret Key / OAuth-токен (Yandex Disk) / FTP/SFTP password"))
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -70,6 +75,18 @@ class FileStorage(models.Model):
             if not self.secret_key:
                 raise ValidationError(
                     {"secret_key": _("OAuth token is required for Yandex Disk")})
+        elif t in (self.TYPE_FTP, self.TYPE_SFTP):
+            missing = []
+            if not self.host:
+                missing.append("host")
+            if not self.access_key:
+                missing.append("access_key")
+            if not self.secret_key:
+                missing.append("secret_key")
+            if missing:
+                storage_type = "FTP" if t == self.TYPE_FTP else "SFTP"
+                raise ValidationError({f: _(f"Required for {storage_type}")
+                                      for f in missing})
 
 
 class UserDatabase(AbstractBaseModel):

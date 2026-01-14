@@ -1,7 +1,9 @@
 import subprocess
+from ftplib import FTP, error_perm as FTPError
 
 import boto3
 import yadisk
+import paramiko
 from botocore.exceptions import ClientError
 from django.contrib import admin, messages
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
@@ -42,13 +44,14 @@ class FileStorageAdmin(ModelAdmin):
 
     fieldsets = (
         (_("General"), {
-            "fields": ("name", "type", "secret_key"),  # secret_key только здесь!
+            "fields": ("name", "type", "secret_key"),
             "description": _(
                 "For Yandex Disk: OAuth token in 'secret_key'. "
-                "For S3: use 'secret_key' as S3 Secret Key."
+                "For S3: use 'secret_key' as S3 Secret Key. "
+                "For FTP/SFTP: use 'secret_key' as password."
             ),
         }),
-        (_("S3 settings"), {
+        (_("Storage settings"), {
             "fields": ("host", "bucket_name", "access_key"),
             "classes": ("fs-section", "fs-s3"),
         }),
@@ -69,6 +72,18 @@ class FileStorageAdmin(ModelAdmin):
             if "secret_key" in form.base_fields:
                 form.base_fields["secret_key"].required = True
                 form.base_fields["secret_key"].help_text = _("OAuth token for Yandex Disk.")
+        elif current_type in (FileStorage.TYPE_FTP, FileStorage.TYPE_SFTP):
+            # FTP/SFTP: требуем host, access_key (username), secret_key (password)
+            # bucket_name не используется
+            if "bucket_name" in form.base_fields:
+                form.base_fields["bucket_name"].required = False
+            for f in ("host", "access_key", "secret_key"):
+                if f in form.base_fields:
+                    form.base_fields[f].required = True
+            if "access_key" in form.base_fields:
+                form.base_fields["access_key"].help_text = _("Username for FTP/SFTP.")
+            if "secret_key" in form.base_fields:
+                form.base_fields["secret_key"].help_text = _("Password for FTP/SFTP.")
         else:
             # S3: требуем все
             for f in ("host", "bucket_name", "access_key", "secret_key"):
@@ -92,7 +107,40 @@ class FileStorageAdmin(ModelAdmin):
                         continue
                     y.get_disk_info()
                     messages.success(request, _(f"{storage.name} (Yandex Disk) connection success!"))
+                elif storage.type == FileStorage.TYPE_FTP:
+                    # FTP connection test
+                    host_parts = storage.host.split(":")
+                    host = host_parts[0]
+                    port = int(host_parts[1]) if len(host_parts) > 1 else 21
+
+                    ftp = FTP()
+                    ftp.connect(host, port, timeout=10)
+                    ftp.login(storage.access_key, storage.secret_key)
+                    ftp.pwd()  # Test command
+                    ftp.quit()
+                    messages.success(request, _(f"{storage.name} (FTP) connection success!"))
+                elif storage.type == FileStorage.TYPE_SFTP:
+                    # SFTP connection test
+                    host_parts = storage.host.split(":")
+                    host = host_parts[0]
+                    port = int(host_parts[1]) if len(host_parts) > 1 else 22
+
+                    ssh = paramiko.SSHClient()
+                    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    ssh.connect(
+                        hostname=host,
+                        port=port,
+                        username=storage.access_key,
+                        password=storage.secret_key,
+                        timeout=10
+                    )
+                    sftp = ssh.open_sftp()
+                    sftp.listdir('.')  # Test command
+                    sftp.close()
+                    ssh.close()
+                    messages.success(request, _(f"{storage.name} (SFTP) connection success!"))
                 else:
+                    # S3
                     s3_client = boto3.client(
                         "s3",
                         endpoint_url=storage.host,
@@ -104,6 +152,10 @@ class FileStorageAdmin(ModelAdmin):
                     messages.success(request, _(f"{storage.name} (S3) connection success!"))
             except ClientError as e:
                 messages.error(request, _(f"{storage.name} Connection failed: {e}"))
+            except FTPError as e:
+                messages.error(request, _(f"{storage.name} FTP Connection failed: {e}"))
+            except paramiko.SSHException as e:
+                messages.error(request, _(f"{storage.name} SFTP Connection failed: {e}"))
             except Exception as e:
                 messages.error(request, _(f"{storage.name} Connection failed: {e}"))
 

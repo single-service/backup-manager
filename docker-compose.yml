@@ -10,9 +10,9 @@ services:
       context: .
       dockerfile: ./compose/Dockerfile
     volumes:
-      - ./apps:/backup_manager/apps
-      - ./locale:/backup_manager/locale
-      - ./static:/backup_manager/static
+      # - ./apps:/backup_manager/apps
+      # - ./locale:/backup_manager/locale
+      # - ./static:/backup_manager/static
       - local_db_data:/backup_manager/database
       - static_volume:/backup_manager/static
     ports:
