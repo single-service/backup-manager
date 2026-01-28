@@ -1,3 +1,4 @@
+import os
 from manager.choices import DumpOperationStatusChoices
 from manager.models import (DumpTaskOperation, FileStorage,
                             RecoverBackupOperation)
@@ -47,12 +48,20 @@ class BackupService:
             return False, error
 
         # получаем нужный сервис (S3 или Yandex) по типу
-        storage_service = get_storage_service(storage)
+        try:
+            storage_service = get_storage_service(storage)
 
-        remote_path, error = storage_service.upload_dump(filepath, operation.id)
-        if error:
-            self._set_error4operation(operation, error)
-            return False, error
+            remote_path, error = storage_service.upload_dump(filepath, operation.id)
+            if error:
+                self._set_error4operation(operation, error)
+                return False, error
+        finally:
+            # удаляем временный файл
+            if filepath and os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception as e:
+                    print(f"Failed to remove temp file {filepath}: {e}")
 
         print(f"File uploaded successfully to {remote_path}")
         operation.status = DumpOperationStatusChoices.SUCCESS
@@ -127,13 +136,21 @@ class BackupService:
             return False, error
 
         # RESTORE DUMP
-        _, error = db_interface.load_dump(
-            filepath=filepath,
-            connection_string=db.connection_string
-        )
-        if error:
-            self._set_error4operation(operation, error)
-            return False, error
+        try:
+            _, error = db_interface.load_dump(
+                filepath=filepath,
+                connection_string=db.connection_string
+            )
+            if error:
+                self._set_error4operation(operation, error)
+                return False, error
+        finally:
+            # удаляем временный файл
+            if filepath and os.path.exists(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception as e:
+                    print(f"Failed to remove temp file {filepath}: {e}")
 
         print("File restored successfully")
         operation.status = DumpOperationStatusChoices.SUCCESS
