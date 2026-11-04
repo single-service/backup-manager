@@ -3,6 +3,9 @@ version: '3.3'
 volumes:
   local_db_data:
   static_volume:
+  local_postgres_data:
+  sftp_data:
+  minio-storage:
 
 services:
   web:
@@ -20,3 +23,39 @@ services:
     env_file:
       - .envs/.django
     restart: on-failure
+
+  db:
+    image: postgres:15.4
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .envs/.postgres
+    ports:
+      - "5432:5432"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  sftp:
+    image: atmoz/sftp:latest
+    command: dumper:backup123:1001
+    volumes:
+      - sftp_data:/home/dumper/upload
+    ports:
+      - "2222:22"
+
+  minio:
+    image: qrm.itfixit.ru:5050/root/backend/minio/minio:latest
+    restart: always
+    command: server --console-address ":9001" /data/
+    ports:
+      - "9005:9000"
+      - "9004:9001"
+    env_file:
+      - .envs/.minio
+    volumes:
+      - minio-storage:/data
+   
+    #sshpass -p 'backup123' sftp -P 2222 -o PreferredAuthentications=password -o StrictHostKeyChecking=no backup@127.0.0.1 <<< $'ls'

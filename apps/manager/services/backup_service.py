@@ -25,33 +25,29 @@ class BackupService:
         operation.status = DumpOperationStatusChoices.IN_PROCESS
         operation.error_text = None
         operation.save()
-
         db = operation.task.database
+        db_name = db.name
         storage = operation.task.file_storage  # теперь это FileStorage
-
         # bucket обязателен только для S3
         if storage.type == FileStorage.TYPE_S3 and not storage.bucket_name:
             error = "Need to add bucket name to storage"
             self._set_error4operation(operation, error)
             return False, error
-
         db_interface = DB_INTERFACE[db.db_type]()
         is_connected = db_interface.check_connection(db.connection_string)
         if not is_connected:
             error = "Database connection failed"
             self._set_error4operation(operation, error)
             return False, error
-
         filepath, error = db_interface.dump_database(db.connection_string, operation.id)
         if error:
             self._set_error4operation(operation, error)
             return False, error
-
         # получаем нужный сервис (S3 или Yandex) по типу
         try:
             storage_service = get_storage_service(storage)
 
-            remote_path, error = storage_service.upload_dump(filepath, operation.id)
+            remote_path, error = storage_service.upload_dump(filepath, db_name)
             if error:
                 self._set_error4operation(operation, error)
                 return False, error
@@ -108,7 +104,7 @@ class BackupService:
         operation.save()
 
         dump_operation = operation.dump_operation
-        db = dump_operation.task.database
+        db = operation.database
         storage = dump_operation.task.file_storage  # FileStorage
 
         if storage.type == FileStorage.TYPE_S3 and not storage.bucket_name:

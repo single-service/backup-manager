@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from ftplib import FTP, error_perm as FTPError
 import boto3
 import yadisk
@@ -19,13 +20,16 @@ class S3StorageSerivce:
             aws_secret_access_key=self.storage_instance.secret_key,
         )
 
-    def upload_dump(self, filepath, operation_id):
+    def upload_dump(self, filepath, db_name):
         error = None
         s3_file_path = None
         fileformat = filepath.split(".")[-1]
+        now = datetime.now()
+        dt = now.strftime("%Y-%m-%d_%H-%M-%S")
+
         try:
             self._connect()
-            key = f'dumps/{operation_id}.{fileformat}'
+            key = f'dumps/{db_name}/{dt}_{db_name}.{fileformat}'
             self.s3.upload_file(filepath, self.storage_instance.bucket_name, key)
             s3_file_path = key
         except FileNotFoundError:
@@ -75,15 +79,17 @@ class YandexDiskStorageSerivce:
             raise RuntimeError("Yandex Disk OAuth token is empty (use secret_key)")
         self._y = yadisk.YaDisk(token=self.storage_instance.secret_key)
 
-    def upload_dump(self, filepath, operation_id):
+    def upload_dump(self, filepath, db_name):
         error = None
         remote_path = None
         fileformat = filepath.split(".")[-1]
+        now = datetime.now()
+        dt = now.strftime("%Y-%m-%d_%H-%M-%S")
         try:
-            base = "/dumps"
+            base = f"/dumps/{db_name}"
             if not self._y.exists(base):
                 self._y.mkdir(base)
-            remote_path = f"{base}/{operation_id}.{fileformat}"
+            remote_path = f"{base}/{dt}_{db_name}.{fileformat}"
             self._y.upload(filepath, remote_path)
         except FileNotFoundError:
             error = "File not found"
@@ -164,23 +170,24 @@ class FTPStorageService:
                 except FTPError:
                     pass
 
-    def upload_dump(self, filepath, operation_id):
+    def upload_dump(self, filepath, db_name):
         error = None
         remote_path = None
         fileformat = filepath.split(".")[-1]
-
+        now = datetime.now()
+        dt = now.strftime("%Y-%m-%d_%H-%M-%S")
         try:
             ftp = self._connect()
             try:
                 # Формируем полный путь: base_path/dumps
-                dumps_dir = f"{self.base_path}/dumps".replace("//", "/")
+                dumps_dir = f"{self.base_path}/dumps/{db_name}/".replace("//", "/")
 
                 # Создаем директорию dumps если нужно
                 self._ensure_directory(ftp, dumps_dir)
                 ftp.cwd(dumps_dir)
 
                 # Загружаем файл
-                filename = f"{operation_id}.{fileformat}"
+                filename = f"{dt}_{db_name}.{fileformat}"
                 with open(filepath, "rb") as f:
                     ftp.storbinary(f"STOR {filename}", f)
 
@@ -292,25 +299,23 @@ class SFTPStorageService:
                 except IOError:
                     pass
 
-    def upload_dump(self, filepath, operation_id):
+    def upload_dump(self, filepath, db_name):
         error = None
         remote_path = None
         fileformat = filepath.split(".")[-1]
-
+        now = datetime.now()
+        dt = now.strftime("%Y-%m-%d_%H-%M-%S")
         try:
             sftp = self._connect()
             try:
                 # Формируем полный путь: base_path/dumps
-                dumps_dir = f"{self.base_path}/dumps".replace("//", "/")
-
+                dumps_dir = f"{self.base_path}/dumps/{db_name}/".replace("//", "/")
                 # Создаем директорию dumps если нужно
                 self._ensure_directory(sftp, dumps_dir)
-
                 # Загружаем файл
-                filename = f"{operation_id}.{fileformat}"
+                filename = f"{dt}_{db_name}.{fileformat}"
                 remote_file_path = f"{dumps_dir}/{filename}".replace("//", "/")
                 sftp.put(filepath, remote_file_path)
-
                 remote_path = remote_file_path
             finally:
                 sftp.close()

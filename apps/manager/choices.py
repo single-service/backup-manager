@@ -6,6 +6,7 @@ class DBType(IntegerChoices):
     POSTGRESQL = 1, 'Postgres'
     CLICKHOUSE = 2, 'ClickHouse'
     MYSQL = 3, 'Mysql'
+    S3 = 4, "S3"
 
 
 class DumpTaskPeriodsChoices(IntegerChoices):

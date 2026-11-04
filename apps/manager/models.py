@@ -116,7 +116,7 @@ class DumpTask(AbstractBaseModel):
         _("Max Dump files count to keep"), default=1)
 
     def __str__(self):
-        return str(self.id)
+        return f"{self.database.name}-{self.file_storage.name}"
 
     class Meta:
         verbose_name = _('Dump Task')
@@ -136,7 +136,7 @@ class DumpTaskOperation(AbstractBaseModel):
         _("Dump File Path"), max_length=250, null=True, blank=True, default=None)
 
     def __str__(self):
-        return str(self.id)
+        return f"{self.created_dt}:{self.task.database.name}-{self.task.file_storage.name}"
 
     class Meta:
         verbose_name = _('Dump Task Operation')
@@ -147,6 +147,8 @@ class RecoverBackupOperation(AbstractBaseModel):
     # Relations
     dump_operation = models.ForeignKey(
         "manager.DumpTaskOperation", on_delete=models.CASCADE)
+    database = models.ForeignKey(
+            "manager.UserDatabase", on_delete=models.CASCADE, default=None, null=True, blank=True)
 
     # Fields
     status = models.IntegerField(

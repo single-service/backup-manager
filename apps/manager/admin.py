@@ -192,6 +192,7 @@ class DumpTaskAdmin(ModelAdmin):
     list_fullwidth = False
     list_display = ["id", "created_dt", "database",
                     "file_storage", "task_period", "max_dumpfiles_keep"]
+    ordering = ["-created_dt"] 
     actions = ['execute_dump']
     inlines = [DumpTaskOperationInline]
 
@@ -220,6 +221,7 @@ class DumpTaskOperationAdmin(ModelAdmin):
     list_filter_submit = False
     list_fullwidth = False
     list_display = ["id", "created_dt", "task__database", "status"]
+    ordering = ["-created_dt"] 
     actions = ["reexecute_dump", "restore_dump"]
 
     @action(description=_("ReExecute dump"))
@@ -249,6 +251,7 @@ class RecoverBackupOperationAdmin(ModelAdmin):
     actions = ["restore_dump"]
     list_display = ["created_dt", "dump_operation__task__database",
                     "dump_operation__dump_path", "status"]
+    ordering = ["-created_dt"]
 
     @action(description=_("Restore dump"))
     def restore_dump(self, request: HttpRequest, queryset):

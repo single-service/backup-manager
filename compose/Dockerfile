@@ -39,6 +39,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     default-mysql-client \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Устанавливаем MinIO Client (mc) из GitHub Releases
+ARG MC_VERSION=RELEASE.2025-08-13T08-35-41Z
+RUN curl -fsSL --retry 5 --connect-timeout 20 \
+      -o /usr/local/bin/mc \
+      https://github.com/minio/mc/releases/download/${MC_VERSION}/mc.linux-amd64.${MC_VERSION} \
+ && chmod +x /usr/local/bin/mc
+
 # Устанавливаем clickhouse-backup
 RUN wget -q https://github.com/Altinity/clickhouse-backup/releases/download/v2.6.3/clickhouse-backup-linux-amd64.tar.gz \
  && tar -zxf clickhouse-backup-linux-amd64.tar.gz \
