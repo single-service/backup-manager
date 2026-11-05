@@ -208,6 +208,10 @@ msgstr "Текст ошибки"
 msgid "Dump File Path"
 msgstr "Путь к файлу дампа"
 
+#: apps/manager/models.py:117
+msgid "Send notification"
+msgstr "Отправить уведомление о дампе"
+
 #: apps/manager/models.py:121
 msgid "Dump Task Operation"
 msgstr "Операция дампа"

@@ -176,3 +176,7 @@ UNFOLD = {
         },
     ],
 }
+
+
+ALERT_MANAGER_URL = os.getenv("ALERT_MANAGER_URL")
+ALERT_MANAGER_APIKEY = os.getenv("ALERT_MANAGER_APIKEY")

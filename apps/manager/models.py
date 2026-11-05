@@ -114,6 +114,7 @@ class DumpTask(AbstractBaseModel):
         _("Task Period"), choices=DumpTaskPeriodsChoices.choices)
     max_dumpfiles_keep = models.PositiveIntegerField(
         _("Max Dump files count to keep"), default=1)
+    is_webhook = models.BooleanField(_("Send notification"), default=False)
 
     def __str__(self):
         return f"{self.database.name}-{self.file_storage.name}"

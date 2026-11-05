@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from ftplib import FTP, error_perm as FTPError
 import boto3
