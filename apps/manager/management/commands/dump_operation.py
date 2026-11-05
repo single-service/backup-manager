@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 
 
-from apps.manager.services.alert_manager import send_notification
+from manager.services.alert_manager import send_notification
 from manager.services.backup_service import BackupService
 
 

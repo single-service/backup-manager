@@ -1,7 +1,7 @@
-from django.contrib.sites import requests
+import requests
 from django.conf import settings
 
-from apps.manager.models import DumpTaskOperation
+from manager.models import DumpTaskOperation
 
 
 def send_notification(operation_id, success, error=None):
