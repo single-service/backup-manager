@@ -85,6 +85,8 @@ class YandexDiskStorageSerivce:
         now = datetime.now()
         dt = now.strftime("%Y-%m-%d_%H-%M-%S")
         try:
+            if not self._y.exists("/dumps"):
+                self._y.mkdir("/dumps")
             base = f"/dumps/{db_name}"
             if not self._y.exists(base):
                 self._y.mkdir(base)
