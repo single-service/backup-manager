@@ -1,4 +1,5 @@
 import subprocess
+from urllib.parse import urlparse
 
 import psycopg2
 
@@ -22,16 +23,20 @@ class PostgresqlService:
         # --clean   -> добавить DROP
         # --if-exists -> безопасные DROP IF EXISTS
         # --no-owner/--no-privileges -> не трогать владельцев/гранты
-        command = (
-            f'{pg_dump} "{connection_string}" '
-            f'--clean --if-exists --no-owner --no-privileges '
-            f'-f "{output_file}"'
-        )
+        command = [
+            pg_dump, connection_string,
+            "--clean", "--if-exists", "--no-owner", "--no-privileges",
+            "-f", output_file,
+        ]
         print("Выполняем команду dump")
-        try:
-            subprocess.run(command, shell=True, check=True)
-        except subprocess.CalledProcessError as e:
-            return None, f"Ошибка при создании дампа: {e}"
+        res = subprocess.run(command, capture_output=True, text=True)
+        if res.returncode != 0:
+            # stderr содержит реальную причину; пароль из строки подключения не светим
+            stderr = res.stderr.strip()
+            password = urlparse(connection_string).password
+            if password:
+                stderr = stderr.replace(password, "***")
+            return None, f"Ошибка при создании дампа (код {res.returncode}): {stderr}"
         return output_file, None
 
     def load_dump(self, connection_string, filepath):

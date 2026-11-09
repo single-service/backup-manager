@@ -4,6 +4,11 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# cron запускает задачи с пустым окружением (PATH=/usr/bin:/bin, без переменных
+# из env_file), поэтому сохраняем окружение контейнера, чтобы cronfile его подгрузил
+export -p > /etc/container_env.sh
+chmod 600 /etc/container_env.sh
+
 # Запуск cron в фоновом режиме
 cron
 

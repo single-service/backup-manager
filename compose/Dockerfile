@@ -66,8 +66,9 @@ COPY ./compose/start /start
 RUN sed -i 's/\r$//g' /start && chmod +x /start
 
 # Cron
-COPY ./compose/cronfile /etc/cron.d/dump_cron
-RUN chmod 0644 /etc/cron.d/dump_cron && crontab /etc/cron.d/dump_cron
+# Ставим как crontab root (в /etc/cron.d не кладём: там формат требует поле user)
+COPY ./compose/cronfile /tmp/cronfile
+RUN crontab /tmp/cronfile && rm /tmp/cronfile
 
 # Приложение
 COPY ./apps .

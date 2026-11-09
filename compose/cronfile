@@ -1,1 +1,4 @@
-0 1 * * * /usr/local/bin/python /backup_manager/manage.py check_dump_operations >> /var/log/cron.log 2>&1
+SHELL=/bin/bash
+PATH=/usr/local/bin:/usr/local/sbin:/usr/sbin:/usr/bin:/sbin:/bin
+
+0 1 * * * . /etc/container_env.sh; cd /backup_manager && /usr/local/bin/python manage.py check_dump_operations >> /var/log/cron.log 2>&1
